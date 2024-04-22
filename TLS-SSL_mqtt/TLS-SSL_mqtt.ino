@@ -6,8 +6,10 @@
 #define trigPin 33
 
 
-char ssid[] = "Vodafone-8EF113";    // your network SSID (name)
-char password[] = "6jPhR79ccnVaTWHj";    // your network password 
+//char ssid[] = "Vodafone-8EF113";    // your network SSID (name)
+//char password[] = "6jPhR79ccnVaTWHj";    // your network password 
+char ssid[] = "Estudios  São Pedro2G";    // your network SSID (name)
+char password[] = "Saopedro";    // your network password
 
 
 // MQTT Broker settings DEFAULT
