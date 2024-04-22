@@ -2,6 +2,10 @@
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 
+#define echoPin 32
+#define trigPin 33
+
+
 char ssid[] = "Vodafone-8EF113";    // your network SSID (name)
 char password[] = "6jPhR79ccnVaTWHj";    // your network password 
 
@@ -91,6 +95,10 @@ void mqttCallback(char *topic, byte *payload, unsigned int length);
 void setup() {
     Serial.begin(115200);
     connectToWiFi();
+
+    //set up pins for ultrasonic sensor
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 
     // Set Root CA certificate
     esp_client.setCACert(ca_cert);
