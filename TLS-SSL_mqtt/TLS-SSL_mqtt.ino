@@ -2,12 +2,16 @@
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 
+//variaveis para ultrasonic switch
 #define echoPin 32
 #define trigPin 33
 
+//reed switch
+#define reedPin 27
 
-char ssid[] = "Vodafone-8EF113";    // your network SSID (name)
-char password[] = "6jPhR79ccnVaTWHj";    // your network password 
+
+char ssid[] = "Vodafone-8EF113";       // your network SSID (name)
+char password[] = "6jPhR79ccnVaTWHj";  // your network password
 
 
 // MQTT Broker settings DEFAULT
@@ -16,6 +20,10 @@ const char *mqtt_topic = "emqx/esp32";
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
 const int mqtt_port = 8883;
+
+//MQTT topics
+const char *mqtt_topic_cheio = "contentor/cheio";
+const char *mqtt_topic_cheio = "contentor/vazio";
 
 
 // MQTT Broker settings
@@ -93,63 +101,103 @@ void mqttCallback(char *topic, byte *payload, unsigned int length);
 
 
 void setup() {
-    Serial.begin(115200);
-    connectToWiFi();
+  Serial.begin(115200);
+  connectToWiFi();
 
-    //set up pins for ultrasonic sensor
+  //set up pins for ultrasonic sensor
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
-    // Set Root CA certificate
-    esp_client.setCACert(ca_cert);
+  //pin for reed switch
+  pinMode(reedPin, INPUT_PULLUP);
 
-    mqtt_client.setServer(mqtt_broker, mqtt_port);
-    mqtt_client.setKeepAlive(60);
-    mqtt_client.setCallback(mqttCallback);
-    connectToMQTT();
+  // Set Root CA certificate
+  esp_client.setCACert(ca_cert);
+
+  mqtt_client.setServer(mqtt_broker, mqtt_port);
+  mqtt_client.setKeepAlive(60);
+  mqtt_client.setCallback(mqttCallback);
+  connectToMQTT();
 }
 
 void connectToWiFi() {
-    WiFi.begin(ssid, password);
-    Serial.print("Connecting to WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("\nConnected to WiFi");
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected to WiFi");
 }
 
 void connectToMQTT() {
-    while (!mqtt_client.connected()) {
-        String client_id = "esp32-client-" + String(WiFi.macAddress());
-        Serial.printf("Connecting to MQTT Broker as %s...\n", client_id.c_str());
-        if (mqtt_client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-            Serial.println("Connected to MQTT broker");
-            mqtt_client.subscribe(mqtt_topic);
-            mqtt_client.publish(mqtt_topic, "Hi EMQX I'm ESP32 ^^");  // Publish message upon connection
-        } else {
-            Serial.print("Failed to connect to MQTT broker, rc=");
-            Serial.print(mqtt_client.state());
-            Serial.println(" Retrying in 5 seconds.");
-            delay(5000);
-        }
+  while (!mqtt_client.connected()) {
+    String client_id = "esp32-client-" + String(WiFi.macAddress());
+    Serial.printf("Connecting to MQTT Broker as %s...\n", client_id.c_str());
+    if (mqtt_client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
+      Serial.println("Connected to MQTT broker");
+      mqtt_client.subscribe(mqtt_topic);
+      mqtt_client.publish(mqtt_topic, "I'm connected to the mother ship");  // Publish message upon connection
+    } else {
+      Serial.print("Failed to connect to MQTT broker, rc=");
+      Serial.print(mqtt_client.state());
+      Serial.println(" Retrying in 5 seconds.");
+      delay(5000);
     }
+  }
 }
 
 void mqttCallback(char *topic, byte *payload, unsigned int length) {
-    Serial.print("Message received on topic: ");
-    Serial.println(topic);
-    Serial.print("Message: ");
-    for (unsigned int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
-    }
-    Serial.println("\n-----------------------");
+  Serial.print("Message received on topic: ");
+  Serial.println(topic);
+  Serial.print("Message: ");
+  for (unsigned int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println("\n-----------------------");
+}
+
+long duration, distance;
+float calculate_distance() {
+  digitalWrite(trigPin, LOW);
+  delay(2);
+
+  digitalWrite(trigPin, HIGH);
+  delay(10);
+
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration / 58.2;
+  String disp = String(distance);
+  delay(1000);
+  return distance;
+
+  /*Serial.print("Distancia: ");
+  Serial.print(disp);
+  Serial.println(" cm");*/
 }
 
 
+
+
 void loop() {
-    if (!mqtt_client.connected()) {
-        connectToMQTT();
+  if (!mqtt_client.connected()) {
+    connectToMQTT();
+  } else {
+    int tampa = digitalRead(reedPin);  // Read the state of the switch
+    if (tampa == LOW) {
+      calculate_distance();
+      Serial.print("Tampa fechada chefe");
+      Serial.print(distance);
+      if (distance < 5) {
+        mqtt_client.subscribe(mqtt_topic_cheio);
+        mqtt_client.publish(mqtt_topic_cheio, "Estou de saco cheio");  // Publish message upon connection
+      }else{
+        mqtt_client.subscribe(mqtt_topic_vazio);
+        mqtt_client.publish(mqtt_topic_vazio, "Estou de saco vazio");  // Publish message upon connection
+      }
     }
-    mqtt_client.loop();
+  }
+  mqtt_client.loop();
 }
