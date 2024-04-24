@@ -12,16 +12,18 @@
 
 //char ssid[] = "Vodafone-8EF113";       // your network SSID (name)
 //char password[] = "6jPhR79ccnVaTWHj";  // your network password
-char ssid[] = "Estudios  São Pedro2G";       // your network SSID (name)
-char password[] = "Saopedro";  // your network password
+//char ssid[] = "Estudios  São Pedro2G";       // your network SSID (name)
+//char password[] = "Saopedro";  // your network password
+char ssid[] = "A tua mae";        // your network SSID (name)
+char password[] = "apasse12345";  // your network password
 
 
 // MQTT Broker settings DEFAULT
-const char *mqtt_broker = "broker.emqx.io";
+/*const char *mqtt_broker = "broker.emqx.io";
 const char *mqtt_topic = "emqx/esp32";
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
-const int mqtt_port = 8883;
+const int mqtt_port = 8883;*/
 
 //MQTT topics
 const char *mqtt_topic_cheio = "contentor/cheio";
@@ -29,11 +31,11 @@ const char *mqtt_topic_vazio = "contentor/vazio";
 
 
 // MQTT Broker settings
-/*const char *mqtt_broker = "y29efdb1.ala.us-east-1.emqxsl.com";
+const char *mqtt_broker = "y29efdb1.ala.us-east-1.emqxsl.com";
 const char *mqtt_topic = "emqx/esp32";
 const char *mqtt_username = "arduino";
 const char *mqtt_password = "arduino1234";
-const int mqtt_port = 8883;*/
+const int mqtt_port = 8883;
 
 // WiFi and MQTT client initialization
 WiFiClientSecure esp_client;
@@ -41,7 +43,7 @@ PubSubClient mqtt_client(esp_client);
 
 // Root CA Certificate
 // Load DigiCert Global Root G2, which is used by EMQX Public Broker: broker.emqx.io
-const char *ca_cert = R"EOF(
+/*const char *ca_cert = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
@@ -64,7 +66,7 @@ Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91
 pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl
 MrY=
 -----END CERTIFICATE-----
-)EOF";
+)EOF";*/
 
 // Load DigiCert Global Root CA ca_cert, which is used by EMQX Serverless Deployment
 /*
@@ -220,10 +222,14 @@ void loop() {
       if (distance < 5) {
         mqtt_client.subscribe(mqtt_topic_cheio);
         mqtt_client.publish(mqtt_topic_cheio, "Estou de saco cheio");  // Publish message upon connection
-      }else{
+      } else {
         mqtt_client.subscribe(mqtt_topic_vazio);
         mqtt_client.publish(mqtt_topic_vazio, "Estou de saco vazio");  // Publish message upon connection
       }
+    } else {
+      Serial.print("A tampa está aberta chefe");
+      Serial.printlln("Tentar novamente dentro de 5s");
+      delay(5000);
     }
   }
   mqtt_client.loop();
