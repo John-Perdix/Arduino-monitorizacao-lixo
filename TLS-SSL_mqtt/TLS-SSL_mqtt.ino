@@ -227,8 +227,8 @@ void loop() {
         mqtt_client.publish(mqtt_topic_vazio, "Estou de saco vazio");  // Publish message upon connection
       }
     } else {
-      Serial.print("A tampa está aberta chefe");
-      Serial.printlln("Tentar novamente dentro de 5s");
+      Serial.println("A tampa está aberta chefe");
+      Serial.println("Tentar novamente dentro de 5s");
       delay(5000);
     }
   }
