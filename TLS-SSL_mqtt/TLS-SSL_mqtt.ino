@@ -14,8 +14,10 @@
 //char password[] = "6jPhR79ccnVaTWHj";  // your network password
 //char ssid[] = "Estudios  São Pedro2G";       // your network SSID (name)
 //char password[] = "Saopedro";  // your network password
-char ssid[] = "A tua mae";        // your network SSID (name)
-char password[] = "apasse12345";  // your network password
+//char ssid[] = "A tua mae";        // your network SSID (name)
+//char password[] = "apasse12345";  // your network password
+char ssid[] = "O Teu pai";       // your network SSID (name)
+char password[] = "gandatouro";  // your network password
 
 
 //MQTT topics
@@ -26,7 +28,8 @@ const char *mqtt_topic_lotacao = "contentor/lotacao";
 
 //intervalo de 30 minutos para medicao
 unsigned long previousMillis = 0;  // Store the last time the action was executed
-const long interval = 30 * 60 * 1000;  // Interval in milliseconds (30 minutes)
+//const long interval = 30 * 60 * 1000;  // Interval in milliseconds (30 minutes)
+const long interval = 5000;  // Interval in milliseconds (5 seconds)
 
 
 // MQTT Broker settings
@@ -145,8 +148,8 @@ float calculate_distance() {
 
   duration = pulseIn(echoPin, HIGH);
   distance = duration / 58.2;
-  String disp = String(distance);
-  delay(1000);
+  /* String disp = String(distance);
+  delay(1000); */
   return distance;
 
   /*Serial.print("Distancia: ");
@@ -154,62 +157,62 @@ float calculate_distance() {
   Serial.println(" cm");*/
 }
 
-
-
-
 void loop() {
   if (!mqtt_client.connected()) {
     connectToMQTT();
   } else {
-    int tampa = digitalRead(reedPin);  // Read the state of the switch
-    if (tampa == LOW) {
-      Serial.print("Tampa fechada chefe");
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= interval) {
+      int tampa = digitalRead(reedPin);  // Read the state of the switch
+      if (tampa == LOW) {
+        Serial.print("Tampa fechada chefe");
 
-      unsigned long currentMillis = millis();
-      if (currentMillis - previousMillis >= interval) {
-      medicao();      
-      previousMillis = currentMillis;
+
+        medicao();
+
+
+      } else {
+        mqtt_client.publish(mqtt_topic_lotacao, "Tampa Aberta");
+        Serial.println("A tampa está aberta chefe");
+        Serial.println("Tentar novamente dentro de 5s");
+        //delay(5000);
       }
-
-    } else {
-      mqtt_client.publish(mqtt_topic_lotacao, "Tampa Aberta")
-      Serial.println("A tampa está aberta chefe");
-      Serial.println("Tentar novamente dentro de 5s");
-      delay(5000);
+      previousMillis = currentMillis;
     }
   }
   mqtt_client.loop();
 }
 
 
-void medicao(){
+void medicao() {
   calculate_distance();
-  Serial.print(distance);
-  if (distance < 5) {
-        mqtt_client.publish(mqtt_topic_lotacao, "100");
-      }
-      if (distance <= 12.87) {
-        mqtt_client.publish(mqtt_topic_lotacao, "92");
-      }
-      if (distance <= 25.75) {
-        mqtt_client.publish(mqtt_topic_lotacao, "75");
-      }
-      if (distance <= 38.62) {
-        mqtt_client.publish(mqtt_topic_lotacao, "63");
-      }
-      if (distance <= 51.50) {
-        mqtt_client.publish(mqtt_topic_lotacao, "50");
-      }
-      if (distance <= 64.37) {
-        mqtt_client.publish(mqtt_topic_lotacao, "38");
-      }
-      if (distance <= 77.25) {
-        mqtt_client.publish(mqtt_topic_lotacao, "25");
-      }
-      if (distance <= 90.12) {
-        mqtt_client.publish(mqtt_topic_lotacao, "12");
-      }
-      if (distance >= 97) {
-        mqtt_client.publish(mqtt_topic_lotacao, "0");
-      }
+  Serial.print("Distancia: ");
+  Serial.println(distance);
+  if (distance <= 12.87) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 100%");
+  }
+  if (distance >= 12.87 && distance <= 25.75) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 92%");
+  }
+  if (distance >= 25.75 && distance <= 38.62) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 75%");
+  }
+  if (distance >= 38.62 && distance <= 51.50) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 63%");
+  }
+  if (distance >= 51.50 && distance <= 64.37) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 50%");
+  }
+  if (distance >= 64.37 && distance <= 77.25) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 38%");
+  }
+  if (distance >= 77.25 && distance <= 90.12) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 25%");
+  }
+  if (distance >= 90.12 && distance <= 97) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 12%");
+  }
+  if (distance >= 97) {
+    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 0%");
+  }
 }
