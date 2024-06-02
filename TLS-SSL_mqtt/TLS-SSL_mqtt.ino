@@ -16,14 +16,16 @@
 //char password[] = "Saopedro";  // your network password
 //char ssid[] = "A tua mae";        // your network SSID (name)
 //char password[] = "apasse12345";  // your network password
-char ssid[] = "O Teu pai";       // your network SSID (name)
-char password[] = "gandatouro";  // your network password
-
+//char ssid[] = "O Teu pai";       // your network SSID (name)
+//char password[] = "gandatouro";  // your network password
+char ssid[] = "IoT-Test";       // your network SSID (name)
+char password[] = "Denohd0dkooz8Oir";  // your network password
 
 //MQTT topics
 const char *mqtt_topic_cheio = "contentor/cheio";
 const char *mqtt_topic_vazio = "contentor/vazio";
 const char *mqtt_topic_lotacao = "contentor/lotacao";
+const char *mqtt_topic_gas = "contentor/gas";
 
 
 //intervalo de 30 minutos para medicao
@@ -37,7 +39,7 @@ const char *mqtt_broker = "y29efdb1.ala.us-east-1.emqxsl.com";
 const char *mqtt_topic = "emqx/esp32";
 const char *mqtt_username = "arduino";
 const char *mqtt_password = "arduino1234";
-const int mqtt_port = 8883;
+const int mqtt_port = 8084;
 
 // WiFi and MQTT client initialization
 WiFiClientSecure esp_client;
@@ -161,14 +163,18 @@ void loop() {
   if (!mqtt_client.connected()) {
     connectToMQTT();
   } else {
+    //codigo que acontece a um intervalo de tempo definido
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
       int tampa = digitalRead(reedPin);  // Read the state of the switch
       if (tampa == LOW) {
         Serial.print("Tampa fechada chefe");
 
-
+        //chamar a função que calcula a lotacao
         medicao();
+
+        //Chamar a funcao que calcula o volume de gases nocivos(metano e monoxido de carbono)
+        gasAnaliser();
 
 
       } else {
@@ -215,4 +221,31 @@ void medicao() {
   if (distance >= 97) {
     mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 0%");
   }
+}
+
+
+void gasAnaliser() {
+  float sensor_volt = 0.0;  // Initialize sensor_volt
+  float RS_air = 0.0;       // Initialize RS_air
+  float R0 = 0.0;           // Initialize R0
+  float sensorValue = 0.0;  // Initialize sensorValue
+
+  //Average
+  for (int x = 0; x < 100; x++) {
+    sensorValue = sensorValue + analogRead(34);
+    delay(10);  // Add a small delay between analog readings
+  }
+  sensorValue = sensorValue / 100.0;
+  //-----------------------------------------------/
+
+  sensor_volt = (sensorValue / 4095.0) * 3.3;  // Adjust conversion for 12-bit ADC and 3.3V reference
+  RS_air = (3.3 - sensor_volt) / sensor_volt;  // Depend on RL on your module
+  R0 = RS_air / 9.9;                           // According to MQ9 datasheet table
+
+  Serial.print("sensor_volt = ");
+  Serial.print(sensor_volt);
+  Serial.println("V");
+
+  Serial.print("R0 = ");
+  Serial.println(R0);
 }
