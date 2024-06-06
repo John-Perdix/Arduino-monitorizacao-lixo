@@ -75,7 +75,7 @@ const MapComponent = ({ markerData }) => {
                 essential: true
             });
 
-            // Update marker icon based on the status
+            // Atualiza o icon baseando no status
             const markerElement = marker.getElement();
             const iconUrl = iconMapping[markerData.status + (markerData.gas === "Detected" ? "Gas" : "")];
             if (iconUrl) {
@@ -84,12 +84,12 @@ const MapComponent = ({ markerData }) => {
                 updateFavicon(iconUrl);
             }
 
-            // Add popup to marker
-            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+            // Adicionar popup ao icon
+            const popup = new mapboxgl.Popup({ offset: 50 }).setHTML(
                 `<div style="color: black;">
-                    <strong>Name:</strong> Trash Can<br/>
-                    <strong>Fullness:</strong> ${markerData.status}<br/>
-                    <strong>Air Quality:</strong> ${markerData.gas === "Detected" ? "Poor" : "Good"}
+                    <strong>Nome:</strong> Lixo DEI 1<br/>
+                    <strong>Lotação:</strong> ${markerData.status}<br/>
+                    <strong>Qualidade de Ar:</strong> ${markerData.gas === "Detected" ? "Má" : "Boa"}
                 </div>`
             );
             marker.setPopup(popup);

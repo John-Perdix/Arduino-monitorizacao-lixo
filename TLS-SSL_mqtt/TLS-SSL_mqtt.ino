@@ -36,14 +36,14 @@ unsigned long previousMillis = 0;  // Store the last time the action was execute
 //const long interval = 30 * 60 * 1000;  // Interval in milliseconds (30 minutes)
 const long interval = 5000;  // Interval in milliseconds (5 seconds)
 
-// MQTT Broker settings
+//Settings do broker
 const char *mqtt_broker = "y29efdb1.ala.us-east-1.emqxsl.com";
 const char *mqtt_topic = "emqx/esp32";
 const char *mqtt_username = "arduino";
 const char *mqtt_password = "arduino1234";
 const int mqtt_port = 8883;
 
-// WiFi and MQTT client initialization
+//Iniciar os clientes de WIFI e MQTT
 WiFiClientSecure esp_client;
 PubSubClient mqtt_client(esp_client);
 
@@ -78,7 +78,6 @@ const char *lng = "-8.414758649055049";
 
 bool gasDetetado = false;
 
-// Function Declarations
 void connectToWiFi();
 
 void connectToMQTT();
@@ -100,7 +99,7 @@ void setup() {
   //pin para sensor de gas
   pinMode(gasPin, INPUT);
 
-  // Set Root CA certificate
+  // Definir o certificado CA
   esp_client.setCACert(ca_cert);
 
   mqtt_client.setServer(mqtt_broker, mqtt_port);
@@ -128,7 +127,7 @@ void connectToMQTT() {
     if (mqtt_client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("Connected to MQTT broker");
       mqtt_client.subscribe(mqtt_topic);
-      mqtt_client.publish(mqtt_topic, "I'm connected to the mother ship");  // Publish message upon connection
+      mqtt_client.publish(mqtt_topic, "I'm connected to the mother ship");
     } else {
       Serial.print("Failed to connect to MQTT broker, rc=");
       Serial.print(mqtt_client.state());
@@ -160,13 +159,8 @@ float calculate_distance() {
 
   duration = pulseIn(echoPin, HIGH);
   distance = duration / 58.2;
-  /* String disp = String(distance);
-  delay(1000); */
-  return distance;
 
-  /*Serial.print("Distancia: ");
-  Serial.print(disp);
-  Serial.println(" cm");*/
+  return distance;
 }
 
 void loop() {
@@ -176,7 +170,7 @@ void loop() {
     //codigo que acontece a um intervalo de tempo definido
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
-      int tampa = digitalRead(reedPin);  // Read the state of the switch
+      int tampa = digitalRead(reedPin);
       if (tampa == LOW) {
         Serial.print("Tampa fechada chefe");
 
@@ -205,22 +199,22 @@ void loop() {
 }
 
 void gasAnaliser() {
-  float sensor_volt = 0.0;  // Initialize sensor_volt
-  float RS_air = 0.0;       // Initialize RS_air
-  float R0 = 0.0;           // Initialize R0
-  float sensorValue = 0.0;  // Initialize sensorValue
+  float sensor_volt = 0.0;
+  float RS_air = 0.0;
+  float R0 = 0.0;
+  float sensorValue = 0.0;
 
   //Average
   for (int x = 0; x < 100; x++) {
     sensorValue = sensorValue + analogRead(34);
-    delay(10);  // Add a small delay between analog readings
+    delay(10);
   }
   sensorValue = sensorValue / 100.0;
   //-----------------------------------------------/
 
-  sensor_volt = (sensorValue / 4095.0) * 3.3;  // Adjust conversion for 12-bit ADC and 3.3V reference
-  RS_air = (3.3 - sensor_volt) / sensor_volt;  // Depend on RL on your module
-  R0 = RS_air / 9.9;                           // According to MQ9 datasheet table
+  sensor_volt = (sensorValue / 4095.0) * 3.3;
+  RS_air = (3.3 - sensor_volt) / sensor_volt;
+  R0 = RS_air / 9.9;
 
   Serial.print("sensor_volt = ");
   Serial.print(sensor_volt);
@@ -243,51 +237,32 @@ void medicao() {
   Serial.print("Distancia: ");
   Serial.println(distance);
 
-  // Create a JSON object
+  // Cria o objeto em JSON
   StaticJsonDocument<200> doc;
   doc["lat"] = lat;
   doc["lng"] = lng;
 
-  if (distance <= 12) {
+  if (distance <= 2) {
     doc["msg"] = "Full";
   }
-  /* if (distance >= 12.87 && distance <= 25.75) {
-    doc["msg"] = "92%";
-  }
-  if (distance >= 25.75 && distance <= 38.62) {
-    doc["msg"] = "75%";
-  }
-  if (distance >= 38.62 && distance <= 51.50) {
-    doc["msg"] = "63%";
-  } */
-  if (distance > 12 && distance <= 50) {
+  if (distance > 2 && distance <= 10) {
     doc["msg"] = "Half-full";
   }
-  /* if (distance >= 64.37 && distance <= 77.25) {
-    doc["msg"] = "38%";
-  }
-  if (distance >= 77.25 && distance <= 90.12) {
-    doc["msg"] = "25%";
-  }
-  if (distance >= 90.12 && distance <= 97) {
-    doc["msg"] = "12%";
-  } */
-  if (distance > 50) {
+  if (distance > 10) {
     doc["msg"] = "Empty";
   }
 
-  // Set gas status
+  // Define o status do gas
   if (gasDetetado) {
     doc["gas"] = "Detected";
   } else {
     doc["gas"] = "NotDetected";
   }
 
-  // Serialize JSON to a string
+  // Serializar JSON para string
   char buffer[256];
-  //serializeJson(doc, buffer);
   size_t n = serializeJson(doc, buffer);
 
-  // Publish the JSON message
+  // Publica a mensagem em JSON
   mqtt_client.publish(mqtt_topic_lotacao, buffer, n);
 }

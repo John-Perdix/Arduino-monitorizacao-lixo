@@ -7,7 +7,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  background-color: rgb(95, 207, 95);
+  background-color: white;
   height: 100%;
 }
 
@@ -48,11 +48,10 @@ html {
 .App {
   text-align: center;
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: flex-start;
   font-size: calc(10px + 2vmin);
-  color: white;
-  padding: 2em;
+  color: black;
   padding-top: 0;
   padding-bottom: 0;
   height: 100vh;
@@ -88,6 +87,7 @@ html {
   flex-direction: column;
   align-items: flex-start;
   padding: 1em;
+  padding-top: 0;
   border-radius: 8px;
   width: 100%;
   /* box-sizing: border-box; */
@@ -145,4 +145,25 @@ html {
   border-top: 10px solid transparent;
   border-right: 10px solid #8edca0;
   border-bottom: 10px solid transparent;
+}
+
+.navbar {
+  background-color: rgb(95, 207, 95);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 2em;
+  padding-right: 2em;
+  color: white;
+}
+
+.navbar h2 {
+  margin-left: 1em;
+}
+
+.map-parent {
+  display: flex;
+  flex-direction: row;
+  padding: 2em;
+  height: 100vh;
 }

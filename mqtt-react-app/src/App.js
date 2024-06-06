@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import MqttComponent from './MqttComponent';
 import MapComponent from './mapComponent';
 import client from './mqttService';
+import iconEmpty from './assets/iconEmpty.png';
 
 const LOCAL_STORAGE_KEY = 'markerData';
 
@@ -40,13 +41,17 @@ function App() {
 
   return (
     <div className="App">
-      <div className='container-mapa'>
-        <h1>Homens do Lixuh</h1>
-        <MapComponent markerData={markerData} />
+      <div className="navbar">
+        <img src={iconEmpty} alt="Empty Icon" width="5%"></img>
+        <h2>Central de Monitoramento do Lixo</h2>
       </div>
-      <div className="App-header">
-        <h1></h1>
-        <MqttComponent />
+      <div className='map-parent'>
+        <div className='container-mapa'>
+          <MapComponent markerData={markerData} />
+        </div>
+        {/* <div className="App-header">
+          <MqttComponent />
+        </div> */}
       </div>
     </div>
   );
