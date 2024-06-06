@@ -16,14 +16,14 @@
 //INTERNETS PARA LIGAR ESP32
 //char ssid[] = "Vodafone-8EF113";       // your network SSID (name)
 //char password[] = "6jPhR79ccnVaTWHj";  // your network password
-char ssid[] = "Estudios  São Pedro2G";  // your network SSID (name)
-char password[] = "Saopedro";           // your network password
+//char ssid[] = "Estudios  São Pedro2G";  // your network SSID (name)
+//char password[] = "Saopedro";           // your network password
 //char ssid[] = "A tua mae";        // your network SSID (name)
 //char password[] = "apasse12345";  // your network password
 //char ssid[] = "O Teu pai";       // your network SSID (name)
 //char password[] = "gandatouro";  // your network password
-//char ssid[] = "IoT-Test";       // your network SSID (name)
-//char password[] = "Denohd0dkooz8Oir";  // your network password
+char ssid[] = "IoT-Test";       // your network SSID (name)
+char password[] = "Denohd0dkooz8Oir";  // your network password
 
 //MQTT topics
 const char *mqtt_topic_cheio = "contentor/cheio";
