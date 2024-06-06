@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 
 //variaveis para ultrasonic switch
 #define echoPin 32
@@ -9,17 +10,20 @@
 //reed switch
 #define reedPin 27
 
+//sensor de gas
+#define gasPin 34
+
 //INTERNETS PARA LIGAR ESP32
 //char ssid[] = "Vodafone-8EF113";       // your network SSID (name)
 //char password[] = "6jPhR79ccnVaTWHj";  // your network password
-//char ssid[] = "Estudios  São Pedro2G";       // your network SSID (name)
-//char password[] = "Saopedro";  // your network password
+char ssid[] = "Estudios  São Pedro2G";  // your network SSID (name)
+char password[] = "Saopedro";           // your network password
 //char ssid[] = "A tua mae";        // your network SSID (name)
 //char password[] = "apasse12345";  // your network password
 //char ssid[] = "O Teu pai";       // your network SSID (name)
 //char password[] = "gandatouro";  // your network password
-char ssid[] = "IoT-Test";       // your network SSID (name)
-char password[] = "Denohd0dkooz8Oir";  // your network password
+//char ssid[] = "IoT-Test";       // your network SSID (name)
+//char password[] = "Denohd0dkooz8Oir";  // your network password
 
 //MQTT topics
 const char *mqtt_topic_cheio = "contentor/cheio";
@@ -27,19 +31,17 @@ const char *mqtt_topic_vazio = "contentor/vazio";
 const char *mqtt_topic_lotacao = "contentor/lotacao";
 const char *mqtt_topic_gas = "contentor/gas";
 
-
 //intervalo de 30 minutos para medicao
 unsigned long previousMillis = 0;  // Store the last time the action was executed
 //const long interval = 30 * 60 * 1000;  // Interval in milliseconds (30 minutes)
 const long interval = 5000;  // Interval in milliseconds (5 seconds)
-
 
 // MQTT Broker settings
 const char *mqtt_broker = "y29efdb1.ala.us-east-1.emqxsl.com";
 const char *mqtt_topic = "emqx/esp32";
 const char *mqtt_username = "arduino";
 const char *mqtt_password = "arduino1234";
-const int mqtt_port = 8084;
+const int mqtt_port = 8883;
 
 // WiFi and MQTT client initialization
 WiFiClientSecure esp_client;
@@ -71,6 +73,11 @@ CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
 -----END CERTIFICATE-----
 )EOF";
 
+const char *lat = "40.186243201487606";
+const char *lng = "-8.414758649055049";
+
+bool gasDetetado = false;
+
 // Function Declarations
 void connectToWiFi();
 
@@ -89,6 +96,9 @@ void setup() {
 
   //pin for reed switch
   pinMode(reedPin, INPUT_PULLUP);
+
+  //pin para sensor de gas
+  pinMode(gasPin, INPUT);
 
   // Set Root CA certificate
   esp_client.setCACert(ca_cert);
@@ -178,51 +188,21 @@ void loop() {
 
 
       } else {
-        mqtt_client.publish(mqtt_topic_lotacao, "Tampa Aberta");
+        //Descomentar para enviar. Nao estava a funcionar e nao sabemos porque. Funcionava antes ¯\_(ツ)_/¯
+        /* mqtt_client.publish(mqtt_topic_lotacao, "Tampa Aberta");
         Serial.println("A tampa está aberta chefe");
-        Serial.println("Tentar novamente dentro de 5s");
-        //delay(5000);
+        Serial.println("Tentar novamente dentro de 5s"); */
+
+        //chamar a função que calcula a lotacao
+        medicao();
+
+        gasAnaliser();
       }
       previousMillis = currentMillis;
     }
   }
   mqtt_client.loop();
 }
-
-
-void medicao() {
-  calculate_distance();
-  Serial.print("Distancia: ");
-  Serial.println(distance);
-  if (distance <= 12.87) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 100%");
-  }
-  if (distance >= 12.87 && distance <= 25.75) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 92%");
-  }
-  if (distance >= 25.75 && distance <= 38.62) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 75%");
-  }
-  if (distance >= 38.62 && distance <= 51.50) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 63%");
-  }
-  if (distance >= 51.50 && distance <= 64.37) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 50%");
-  }
-  if (distance >= 64.37 && distance <= 77.25) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 38%");
-  }
-  if (distance >= 77.25 && distance <= 90.12) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 25%");
-  }
-  if (distance >= 90.12 && distance <= 97) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 12%");
-  }
-  if (distance >= 97) {
-    mqtt_client.publish(mqtt_topic_lotacao, "Lotação: 0%");
-  }
-}
-
 
 void gasAnaliser() {
   float sensor_volt = 0.0;  // Initialize sensor_volt
@@ -248,4 +228,66 @@ void gasAnaliser() {
 
   Serial.print("R0 = ");
   Serial.println(R0);
+
+  if (R0 < 0.12 || R0 > 0.32) {
+    Serial.print("Desvio significante detetado");
+    //mqtt_client.publish(mqtt_topic_gas, "Substância detetada no Ar");
+    gasDetetado = true;
+  } else {
+    gasDetetado = false;
+  }
+}
+
+void medicao() {
+  calculate_distance();
+  Serial.print("Distancia: ");
+  Serial.println(distance);
+
+  // Create a JSON object
+  StaticJsonDocument<200> doc;
+  doc["lat"] = lat;
+  doc["lng"] = lng;
+
+  if (distance <= 12) {
+    doc["msg"] = "Full";
+  }
+  /* if (distance >= 12.87 && distance <= 25.75) {
+    doc["msg"] = "92%";
+  }
+  if (distance >= 25.75 && distance <= 38.62) {
+    doc["msg"] = "75%";
+  }
+  if (distance >= 38.62 && distance <= 51.50) {
+    doc["msg"] = "63%";
+  } */
+  if (distance > 12 && distance <= 50) {
+    doc["msg"] = "Half-full";
+  }
+  /* if (distance >= 64.37 && distance <= 77.25) {
+    doc["msg"] = "38%";
+  }
+  if (distance >= 77.25 && distance <= 90.12) {
+    doc["msg"] = "25%";
+  }
+  if (distance >= 90.12 && distance <= 97) {
+    doc["msg"] = "12%";
+  } */
+  if (distance > 50) {
+    doc["msg"] = "Empty";
+  }
+
+  // Set gas status
+  if (gasDetetado) {
+    doc["gas"] = "Detected";
+  } else {
+    doc["gas"] = "NotDetected";
+  }
+
+  // Serialize JSON to a string
+  char buffer[256];
+  //serializeJson(doc, buffer);
+  size_t n = serializeJson(doc, buffer);
+
+  // Publish the JSON message
+  mqtt_client.publish(mqtt_topic_lotacao, buffer, n);
 }
